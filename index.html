@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InsightFlow Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #09111f;
+      --bg-soft: #101a2d;
+      --panel: rgba(16, 26, 45, 0.82);
+      --panel-strong: #16233b;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #edf4ff;
+      --muted: #95a5c5;
+      --accent: #4fd1c5;
+      --accent-2: #61a5ff;
+      --accent-3: #ffb86b;
+      --danger: #ff6b81;
+      --success: #5dd39e;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      --radius: 22px;
+      --radius-sm: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(79, 209, 197, 0.15), transparent 28%),
+        radial-gradient(circle at top right, rgba(97, 165, 255, 0.15), transparent 26%),
+        linear-gradient(135deg, #06101d 0%, #0d1728 45%, #09111f 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent 90%);
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 20px;
+      background: rgba(6, 12, 22, 0.92);
+      border-right: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(79, 209, 197, 0.12), rgba(97, 165, 255, 0.08));
+      box-shadow: var(--shadow);
+    }
+
+    .brand-badge {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid;
+      place-items: center;
+      color: #03131d;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .nav-menu {
+      display: grid;
+      gap: 12px;
+    }
+
+    .nav-button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      padding: 14px 16px;
+      border-radius: 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+      font-size: 0.98rem;
+    }
+
+    .nav-button:hover,
+    .nav-button.active {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(79, 209, 197, 0.22);
+      transform: translateX(4px);
+    }
+
+    .sidebar-card {
+      margin-top: auto;
+      padding: 18px;
+      border-radius: 18px;
+      background: linear-gradient(160deg, rgba(97, 165, 255, 0.18), rgba(79, 209, 197, 0.12));
+      border: 1px solid var(--border);
+    }
+
+    .sidebar-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .sidebar-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.9rem;
+    }
+
+    .main-content {
+      padding: 28px;
+    }
+
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 28px;
+      background: linear-gradient(145deg, rgba(97, 165, 255, 0.12), rgba(79, 209, 197, 0.08));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.6s ease;
+    }
+
+    .hero h2 {
+      margin: 0 0 10px;
+      font-size: clamp(1.8rem, 4vw, 2.7rem);
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 760px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn,
+    .file-label {
+      border: 1px solid transparent;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 46px;
+    }
+
+    .btn:hover,
+    .file-label:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .btn-primary,
+    .file-label {
+      background: linear-gradient(135deg, var(--accent), #2ad1b8);
+      color: #04212a;
+      font-weight: 700;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-danger {
+      background: rgba(255, 107, 129, 0.12);
+      color: #ffd7de;
+      border-color: rgba(255, 107, 129, 0.28);
+    }
+
+    .section {
+      display: none;
+      animation: fadeUp 0.45s ease;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+    }
+
+    .panel h3,
+    .panel h4 {
+      margin: 0 0 16px;
+    }
+
+    .kpi-card {
+      position: relative;
+      overflow: hidden;
+      padding: 20px;
+      border-radius: 20px;
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+      border: 1px solid var(--border);
+      min-height: 130px;
+    }
+
+    .kpi-card::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      right: -25px;
+      top: -30px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79, 209, 197, 0.18), transparent 70%);
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 10px;
+    }
+
+    .kpi-value {
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .kpi-subtext {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .toolbar,
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .field select,
+    .field input[type="text"],
+    .field input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .field select:focus,
+    .field input:focus {
+      border-color: rgba(79, 209, 197, 0.4);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 6px rgba(93, 211, 158, 0.12);
+    }
+
+    .message {
+      margin: 0 0 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.info {
+      border-color: rgba(97, 165, 255, 0.22);
+    }
+
+    .message.success {
+      border-color: rgba(93, 211, 158, 0.22);
+    }
+
+    .message.error {
+      border-color: rgba(255, 107, 129, 0.28);
+      color: #ffd6dc;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .chart-card {
+      min-height: 360px;
+    }
+
+    .chart-card.full {
+      grid-column: 1 / -1;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 280px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      max-height: 540px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.92rem;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #122039;
+      z-index: 1;
+    }
+
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .empty-state {
+      padding: 34px 20px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+    }
+
+    .loader-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 10, 18, 0.72);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    .loader-overlay.show {
+      display: flex;
+    }
+
+    .loader-card {
+      background: rgba(9, 17, 31, 0.94);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px 32px;
+      text-align: center;
+      min-width: 280px;
+      box-shadow: var(--shadow);
+    }
+
+    .spinner {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      border: 4px solid rgba(255, 255, 255, 0.12);
+      border-top-color: var(--accent);
+      animation: spin 1s linear infinite;
+    }
+
+    .loader-card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .charts-grid,
+      .grid-4,
+      .grid-3,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+      }
+
+      .main-content {
+        padding: 18px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="loader-overlay" id="loader">
+    <div class="loader-card">
+      <div class="spinner"></div>
+      <p id="loaderText">Procesando datos...</p>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-badge">IF</div>
+        <div>
+          <h1>InsightFlow</h1>
+          <p>Data Analytics Cloud</p>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-button active" data-section="dashboard">Dashboard</button>
+        <button class="nav-button" data-section="datos">Datos</button>
+        <button class="nav-button" data-section="configuracion">Configuración</button>
+      </nav>
+
+      <div class="sidebar-card">
+        <h3>Vista ejecutiva</h3>
+        <p>Sube un CSV, un archivo de Excel o un JSON, aplica filtros y obtén métricas y gráficos listos para presentar en segundos.</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <section class="hero">
+        <div>
+          <h2>Analítica visual lista para decisiones reales</h2>
+          <p>Convierte tus datos en un dashboard interactivo con KPIs, filtros en tiempo real y visualizaciones profesionales, todo desde un solo archivo HTML.</p>
+        </div>
+        <div class="actions">
+          <label for="csvFileInput" class="file-label">Subir CSV, Excel o JSON</label>
+          <input id="csvFileInput" type="file" accept=".csv,.xlsx,.xls,.json,text/csv,application/json,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <button class="btn btn-secondary" id="loadSampleBtn">Cargar datos de ejemplo</button>
+          <button class="btn btn-secondary" id="exportBtn">Exportar filtrado</button>
+          <button class="btn btn-danger" id="clearBtn">Limpiar datos</button>
+        </div>
+      </section>
+
+      <div id="messageBox" class="message info"></div>
+
+      <section id="dashboard" class="section active">
+        <div class="status-bar">
+          <div class="status-pill">
+            <span class="status-dot"></span>
+            <span id="datasetStatus">Sin dataset cargado</span>
+          </div>
+          <div class="status-pill" id="rowsStatus">0 filas visibles</div>
+        </div>
+
+        <div class="panel">
+          <h3>Controles de análisis</h3>
+          <div class="toolbar">
+            <div class="field">
+              <label for="metricColumnSelect">Columna numérica</label>
+              <select id="metricColumnSelect"></select>
+            </div>
+            <div class="field">
+              <label for="categoryColumnSelect">Columna de agrupación</label>
+              <select id="categoryColumnSelect"></select>
+            </div>
+          </div>
+          <div class="footer-note">Los filtros se generan automáticamente por columna y actualizan KPIs, tabla y gráficos en tiempo real.</div>
+        </div>
+
+        <div class="grid grid-4" style="margin-top: 18px;">
+          <div class="kpi-card">
+            <div class="kpi-label">Total</div>
+            <p class="kpi-value" id="kpiTotal">0</p>
+            <div class="kpi-subtext" id="kpiTotalText">Sin columna seleccionada</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Promedio</div>
+            <p class="kpi-value" id="kpiAvg">0</p>
+            <div class="kpi-subtext">Cálculo sobre filas visibles</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Máximo</div>
+            <p class="kpi-value" id="kpiMax">0</p>
+            <div class="kpi-subtext">Valor más alto detectado</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Mínimo</div>
+            <p class="kpi-value" id="kpiMin">0</p>
+            <div class="kpi-subtext">Valor más bajo detectado</div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 18px;">
+          <h3>Filtros dinámicos</h3>
+          <div id="filtersContainer" class="toolbar"></div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="panel chart-card">
+            <h4>Gráfico de barras</h4>
+            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+          <div class="panel chart-card">
+            <h4>Gráfico de líneas</h4>
+            <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+          </div>
+          <div class="panel chart-card full">
+            <h4>Gráfico de pastel</h4>
+            <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="datos" class="section">
+        <div class="panel">
+          <div class="status-bar">
+            <h3 style="margin: 0;">Vista de datos</h3>
+            <div class="status-pill" id="tableColumnsStatus">0 columnas detectadas</div>
+          </div>
+          <div id="tableContainer" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section id="configuracion" class="section">
+        <div class="panel">
+          <h3>Configuración del dashboard</h3>
+          <div class="settings-grid">
+            <div class="field">
+              <label for="maxChartItems">Elementos máximos por gráfico</label>
+              <input id="maxChartItems" type="number" min="3" max="25" value="8">
+            </div>
+            <div class="field">
+              <label for="numberFormatSelect">Formato numérico</label>
+              <select id="numberFormatSelect">
+                <option value="es-CO">Español (CO)</option>
+                <option value="en-US">English (US)</option>
+                <option value="es-ES">Español (ES)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="autoPersistToggle">Persistencia local</label>
+              <select id="autoPersistToggle">
+                <option value="true">Activada</option>
+                <option value="false">Desactivada</option>
+              </select>
+            </div>
+          </div>
+          <p class="footer-note">La persistencia guarda el dataset cargado y la configuración del panel en <code>localStorage</code>. Los archivos de Excel se procesan usando la primera hoja del libro y los JSON aceptan arreglos de objetos o un objeto que contenga un arreglo de registros.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Estado central de la aplicación.
+    const appState = {
+      rawData: [],
+      filteredData: [],
+      columns: [],
+      numericColumns: [],
+      filters: {},
+      selectedMetric: "",
+      selectedCategory: "",
+      charts: {
+        bar: null,
+        line: null,
+        pie: null
+      },
+      settings: {
+        maxChartItems: 8,
+        numberLocale: "es-CO",
+        autoPersist: true
+      }
+    };
+
+    const STORAGE_KEY = "insightflow-state-v1";
+    const SAMPLE_CSV = `Region,Vendedor,Categoria,Mes,Ventas,Unidades,Margen
+Norte,Ana,Tecnologia,Enero,12500,34,18
+Sur,Luis,Hogar,Enero,8700,29,12
+Centro,Sofia,Tecnologia,Enero,14300,41,22
+Norte,Carlos,Servicios,Febrero,9800,18,16
+Sur,Ana,Hogar,Febrero,11200,31,14
+Centro,Luis,Tecnologia,Febrero,15750,44,24
+Norte,Sofia,Hogar,Marzo,13450,37,17
+Sur,Carlos,Servicios,Marzo,9150,20,13
+Centro,Ana,Tecnologia,Marzo,17120,46,26
+Norte,Luis,Servicios,Abril,10100,21,15
+Sur,Sofia,Hogar,Abril,11980,33,16
+Centro,Carlos,Tecnologia,Abril,16340,43,23`;
+
+    const refs = {
+      loader: document.getElementById("loader"),
+      loaderText: document.getElementById("loaderText"),
+      messageBox: document.getElementById("messageBox"),
+      csvFileInput: document.getElementById("csvFileInput"),
+      loadSampleBtn: document.getElementById("loadSampleBtn"),
+      exportBtn: document.getElementById("exportBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      datasetStatus: document.getElementById("datasetStatus"),
+      rowsStatus: document.getElementById("rowsStatus"),
+      tableColumnsStatus: document.getElementById("tableColumnsStatus"),
+      metricColumnSelect: document.getElementById("metricColumnSelect"),
+      categoryColumnSelect: document.getElementById("categoryColumnSelect"),
+      filtersContainer: document.getElementById("filtersContainer"),
+      tableContainer: document.getElementById("tableContainer"),
+      kpiTotal: document.getElementById("kpiTotal"),
+      kpiAvg: document.getElementById("kpiAvg"),
+      kpiMax: document.getElementById("kpiMax"),
+      kpiMin: document.getElementById("kpiMin"),
+      kpiTotalText: document.getElementById("kpiTotalText"),
+      maxChartItems: document.getElementById("maxChartItems"),
+      numberFormatSelect: document.getElementById("numberFormatSelect"),
+      autoPersistToggle: document.getElementById("autoPersistToggle")
+    };
+
+    function initApp() {
+      bindEvents();
+      restoreState();
+      if (!appState.rawData.length) {
+        renderEmptyApp();
+      }
+    }
+
+    function bindEvents() {
+      refs.csvFileInput.addEventListener("change", handleFileUpload);
+      refs.loadSampleBtn.addEventListener("click", () => loadDataFromCsv(SAMPLE_CSV, "Dataset de ejemplo"));
+      refs.exportBtn.addEventListener("click", exportFilteredDataToCsv);
+      refs.clearBtn.addEventListener("click", clearAllData);
+
+      refs.metricColumnSelect.addEventListener("change", (event) => {
+        appState.selectedMetric = event.target.value;
+        updateDashboard();
+        persistState();
+      });
+
+      refs.categoryColumnSelect.addEventListener("change", (event) => {
+        appState.selectedCategory = event.target.value;
+        updateDashboard();
+        persistState();
+      });
+
+      refs.maxChartItems.addEventListener("input", (event) => {
+        const value = Number(event.target.value);
+        appState.settings.maxChartItems = Math.max(3, Math.min(25, value || 8));
+        refs.maxChartItems.value = appState.settings.maxChartItems;
+        updateDashboard();
+        persistState();
+      });
+
+      refs.numberFormatSelect.addEventListener("change", (event) => {
+        appState.settings.numberLocale = event.target.value;
+        updateDashboard();
+        persistState();
+      });
+
+      refs.autoPersistToggle.addEventListener("change", (event) => {
+        appState.settings.autoPersist = event.target.value === "true";
+        persistState();
+        showMessage(
+          appState.settings.autoPersist
+            ? "Persistencia local activada. El dataset se guardará automáticamente."
+            : "Persistencia local desactivada. Los nuevos cambios ya no se guardarán en el navegador.",
+          "info"
+        );
+      });
+
+      document.querySelectorAll(".nav-button").forEach((button) => {
+        button.addEventListener("click", () => switchSection(button.dataset.section));
+      });
+    }
+
+    function switchSection(sectionId) {
+      document.querySelectorAll(".nav-button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.section === sectionId);
+      });
+
+      document.querySelectorAll(".section").forEach((section) => {
+        section.classList.toggle("active", section.id === sectionId);
+      });
+    }
+
+    function showLoader(text = "Procesando datos...") {
+      refs.loaderText.textContent = text;
+      refs.loader.classList.add("show");
+    }
+
+    function hideLoader() {
+      refs.loader.classList.remove("show");
+    }
+
+    function showMessage(message, type = "info") {
+      refs.messageBox.textContent = message;
+      refs.messageBox.className = `message show ${type}`;
+    }
+
+    function hideMessage() {
+      refs.messageBox.className = "message";
+      refs.messageBox.textContent = "";
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      const extension = getFileExtension(file.name);
+      const supportedExtensions = ["csv", "xlsx", "xls", "json"];
+
+      if (!supportedExtensions.includes(extension)) {
+        showMessage("El archivo seleccionado no es válido. Por favor sube un archivo CSV, XLSX, XLS o JSON.", "error");
+        event.target.value = "";
+        return;
+      }
+
+      showLoader(`Leyendo archivo ${extension.toUpperCase()}...`);
+      const reader = new FileReader();
+
+      reader.onload = (loadEvent) => {
+        try {
+          if (extension === "csv") {
+            loadDataFromCsv(loadEvent.target.result, file.name);
+          } else if (extension === "json") {
+            loadDataFromJson(loadEvent.target.result, file.name);
+          } else {
+            loadDataFromExcel(loadEvent.target.result, file.name);
+          }
+        } catch (error) {
+          console.error(error);
+          showMessage(`Ocurrió un error al procesar el archivo ${extension.toUpperCase()}.`, "error");
+          hideLoader();
+        } finally {
+          event.target.value = "";
+        }
+      };
+
+      reader.onerror = () => {
+        showMessage("No fue posible leer el archivo. Intenta nuevamente.", "error");
+        hideLoader();
+      };
+
+      if (extension === "csv" || extension === "json") {
+        reader.readAsText(file, "UTF-8");
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    }
+
+    function loadDataFromCsv(csvText, sourceLabel = "dataset") {
+      showLoader("Analizando estructura de datos...");
+      setTimeout(() => {
+        const parsedRows = parseCSV(csvText);
+        ingestParsedRows(parsedRows, sourceLabel);
+      }, 250);
+    }
+
+    function loadDataFromExcel(arrayBuffer, sourceLabel = "dataset") {
+      showLoader("Analizando libro de Excel...");
+      setTimeout(() => {
+        if (typeof XLSX === "undefined") {
+          hideLoader();
+          showMessage("No se pudo cargar la librería de Excel desde el CDN. Verifica tu conexión a internet para abrir archivos XLSX o XLS.", "error");
+          return;
+        }
+
+        let workbook;
+
+        try {
+          workbook = XLSX.read(arrayBuffer, { type: "array" });
+        } catch (error) {
+          console.error(error);
+          hideLoader();
+          showMessage("El archivo de Excel no pudo interpretarse. Verifica que no esté dañado.", "error");
+          return;
+        }
+
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) {
+          hideLoader();
+          showMessage("El archivo de Excel no contiene hojas utilizables.", "error");
+          return;
+        }
+
+        const worksheet = workbook.Sheets[firstSheetName];
+        const parsedRows = XLSX.utils.sheet_to_json(worksheet, {
+          defval: "",
+          raw: false
+        });
+
+        ingestParsedRows(parsedRows, `${sourceLabel} - hoja ${firstSheetName}`);
+      }, 250);
+    }
+
+    function loadDataFromJson(jsonText, sourceLabel = "dataset") {
+      showLoader("Analizando estructura JSON...");
+      setTimeout(() => {
+        let parsedJson;
+
+        try {
+          parsedJson = JSON.parse(jsonText);
+        } catch (error) {
+          console.error(error);
+          hideLoader();
+          showMessage("El archivo JSON no pudo interpretarse. Verifica que tenga una estructura válida.", "error");
+          return;
+        }
+
+        const parsedRows = extractRowsFromJson(parsedJson);
+        if (!parsedRows.length) {
+          hideLoader();
+          showMessage("El JSON no contiene una colección de registros utilizable. Usa un arreglo de objetos o un objeto que incluya un arreglo de registros.", "error");
+          return;
+        }
+
+        ingestParsedRows(parsedRows, sourceLabel);
+      }, 250);
+    }
+
+    function ingestParsedRows(parsedRows, sourceLabel) {
+      if (!parsedRows.length) {
+        hideLoader();
+        showMessage("El archivo no contiene datos utilizables. Verifica que tenga encabezados y filas con contenido.", "error");
+        return;
+      }
+
+      const normalizedRows = normalizeRows(parsedRows);
+      if (!normalizedRows.length) {
+        hideLoader();
+        showMessage("No se encontraron filas válidas después del procesamiento.", "error");
+        return;
+      }
+
+      appState.rawData = normalizedRows;
+      appState.columns = Object.keys(normalizedRows[0]);
+      appState.numericColumns = detectNumericColumns(normalizedRows, appState.columns);
+      appState.filters = createInitialFilters(appState.columns);
+      appState.selectedMetric = getDefaultMetricColumn();
+      appState.selectedCategory = getDefaultCategoryColumn();
+
+      applyFilters();
+      populateSelectors();
+      renderFilters();
+      renderTable();
+      updateDashboard();
+      persistState();
+
+      refs.datasetStatus.textContent = `${sourceLabel} cargado`;
+      showMessage(`Datos cargados correctamente desde ${sourceLabel}. ${appState.rawData.length} filas procesadas.`, "success");
+      hideLoader();
+    }
+
+    function getFileExtension(fileName) {
+      const parts = String(fileName).toLowerCase().split(".");
+      return parts.length > 1 ? parts.pop() : "";
+    }
+
+    function extractRowsFromJson(parsedJson) {
+      if (Array.isArray(parsedJson)) {
+        return parsedJson.filter((item) => isPlainObject(item));
+      }
+
+      if (!isPlainObject(parsedJson)) {
+        return [];
+      }
+
+      const candidateArray = Object.values(parsedJson).find((value) => {
+        return Array.isArray(value) && value.some((item) => isPlainObject(item));
+      });
+
+      return Array.isArray(candidateArray)
+        ? candidateArray.filter((item) => isPlainObject(item))
+        : [];
+    }
+
+    function isPlainObject(value) {
+      return value !== null && typeof value === "object" && !Array.isArray(value);
+    }
+
+    // Parser CSV con soporte básico para comillas y saltos de línea.
+    function parseCSV(text) {
+      if (!text || !text.trim()) {
+        return [];
+      }
+
+      const rows = [];
+      let currentRow = [];
+      let currentValue = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            currentValue += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+          continue;
+        }
+
+        if (char === "," && !inQuotes) {
+          currentRow.push(currentValue.trim());
+          currentValue = "";
+          continue;
+        }
+
+        if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && nextChar === "\n") {
+            i += 1;
+          }
+          currentRow.push(currentValue.trim());
+          if (currentRow.some((cell) => cell !== "")) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentValue = "";
+          continue;
+        }
+
+        currentValue += char;
+      }
+
+      if (currentValue.length || currentRow.length) {
+        currentRow.push(currentValue.trim());
+        if (currentRow.some((cell) => cell !== "")) {
+          rows.push(currentRow);
+        }
+      }
+
+      if (rows.length < 2) {
+        return [];
+      }
+
+      const headers = rows[0].map((header, index) => header || `Columna ${index + 1}`);
+      return rows.slice(1).map((row) => {
+        const record = {};
+        headers.forEach((header, index) => {
+          record[header] = row[index] ?? "";
+        });
+        return record;
+      });
+    }
+
+    function normalizeRows(rows) {
+      return rows
+        .map((row) => {
+          const normalized = {};
+          Object.entries(row).forEach(([key, value]) => {
+            normalized[String(key).trim()] = typeof value === "string" ? value.trim() : value;
+          });
+          return normalized;
+        })
+        .filter((row) => Object.values(row).some((value) => String(value).trim() !== ""));
+    }
+
+    function detectNumericColumns(rows, columns) {
+      return columns.filter((column) => {
+        const values = rows
+          .map((row) => parsePotentialNumber(row[column]))
+          .filter((value) => value !== null);
+        return values.length > 0 && values.length >= Math.ceil(rows.length * 0.6);
+      });
+    }
+
+    function createInitialFilters(columns) {
+      return columns.reduce((acc, column) => {
+        acc[column] = "";
+        return acc;
+      }, {});
+    }
+
+    function getDefaultMetricColumn() {
+      return appState.numericColumns[0] || appState.columns[0] || "";
+    }
+
+    function getDefaultCategoryColumn() {
+      const firstTextColumn = appState.columns.find((column) => !appState.numericColumns.includes(column));
+      return firstTextColumn || appState.columns[0] || "";
+    }
+
+    function populateSelectors() {
+      fillSelect(refs.metricColumnSelect, appState.numericColumns, appState.selectedMetric, "Sin columnas numéricas");
+      fillSelect(refs.categoryColumnSelect, appState.columns, appState.selectedCategory, "Sin columnas disponibles");
+    }
+
+    function fillSelect(selectElement, items, selectedValue, emptyLabel) {
+      selectElement.innerHTML = "";
+
+      if (!items.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = emptyLabel;
+        selectElement.appendChild(option);
+        return;
+      }
+
+      items.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item;
+        option.textContent = item;
+        option.selected = item === selectedValue;
+        selectElement.appendChild(option);
+      });
+    }
+
+    function renderFilters() {
+      refs.filtersContainer.innerHTML = "";
+
+      if (!appState.columns.length) {
+        refs.filtersContainer.innerHTML = `<div class="empty-state" style="width: 100%;">Carga un dataset para generar filtros automáticos.</div>`;
+        return;
+      }
+
+      appState.columns.forEach((column) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "field";
+
+        const label = document.createElement("label");
+        label.textContent = `Filtrar ${column}`;
+
+        const select = document.createElement("select");
+        const uniqueValues = getUniqueValues(appState.rawData, column);
+
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "Todos";
+        select.appendChild(defaultOption);
+
+        uniqueValues.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value || "(Vacío)";
+          option.selected = appState.filters[column] === value;
+          select.appendChild(option);
+        });
+
+        select.addEventListener("change", (event) => {
+          appState.filters[column] = event.target.value;
+          applyFilters();
+          renderTable();
+          updateDashboard();
+          persistState();
+        });
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(select);
+        refs.filtersContainer.appendChild(wrapper);
+      });
+    }
+
+    function getUniqueValues(rows, column) {
+      return [...new Set(rows.map((row) => row[column] ?? ""))]
+        .sort((a, b) => String(a).localeCompare(String(b), appState.settings.numberLocale));
+    }
+
+    function applyFilters() {
+      appState.filteredData = appState.rawData.filter((row) => {
+        return appState.columns.every((column) => {
+          const filterValue = appState.filters[column];
+          return !filterValue || String(row[column] ?? "") === filterValue;
+        });
+      });
+    }
+
+    function updateDashboard() {
+      applyFilters();
+      updateStatuses();
+      renderKpis();
+      renderCharts();
+      renderTable();
+    }
+
+    function updateStatuses() {
+      refs.rowsStatus.textContent = `${appState.filteredData.length} filas visibles`;
+      refs.tableColumnsStatus.textContent = `${appState.columns.length} columnas detectadas`;
+      if (!appState.rawData.length) {
+        refs.datasetStatus.textContent = "Sin dataset cargado";
+      }
+    }
+
+    function renderKpis() {
+      const metricColumn = appState.selectedMetric;
+      const values = appState.filteredData
+        .map((row) => parsePotentialNumber(row[metricColumn]))
+        .filter((value) => value !== null);
+
+      if (!metricColumn || !values.length) {
+        refs.kpiTotal.textContent = "0";
+        refs.kpiAvg.textContent = "0";
+        refs.kpiMax.textContent = "0";
+        refs.kpiMin.textContent = "0";
+        refs.kpiTotalText.textContent = metricColumn
+          ? "No hay datos numéricos para los filtros actuales"
+          : "Selecciona una columna numérica";
+        return;
+      }
+
+      const total = values.reduce((sum, value) => sum + value, 0);
+      const average = total / values.length;
+      const maximum = Math.max(...values);
+      const minimum = Math.min(...values);
+
+      refs.kpiTotal.textContent = formatNumber(total);
+      refs.kpiAvg.textContent = formatNumber(average);
+      refs.kpiMax.textContent = formatNumber(maximum);
+      refs.kpiMin.textContent = formatNumber(minimum);
+      refs.kpiTotalText.textContent = `Analizando "${metricColumn}" sobre ${values.length} registros`;
+    }
+
+    function renderCharts() {
+      const chartData = buildChartData();
+      destroyCharts();
+
+      if (typeof Chart === "undefined") {
+        showMessage("No se pudo cargar Chart.js desde el CDN. Verifica tu conexión a internet para visualizar los gráficos.", "error");
+        return;
+      }
+
+      const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: "#edf4ff"
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#95a5c5" },
+            grid: { color: "rgba(255,255,255,0.06)" }
+          },
+          y: {
+            ticks: { color: "#95a5c5" },
+            grid: { color: "rgba(255,255,255,0.06)" }
+          }
+        }
+      };
+
+      appState.charts.bar = new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: appState.selectedMetric || "Valor",
+            data: chartData.values,
+            backgroundColor: [
+              "rgba(79, 209, 197, 0.75)",
+              "rgba(97, 165, 255, 0.75)",
+              "rgba(255, 184, 107, 0.75)",
+              "rgba(93, 211, 158, 0.75)",
+              "rgba(255, 107, 129, 0.75)",
+              "rgba(130, 170, 255, 0.75)",
+              "rgba(122, 231, 199, 0.75)",
+              "rgba(255, 210, 128, 0.75)"
+            ],
+            borderRadius: 10,
+            borderSkipped: false
+          }]
+        },
+        options: commonOptions
+      });
+
+      appState.charts.line = new Chart(document.getElementById("lineChart"), {
+        type: "line",
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: appState.selectedMetric || "Valor",
+            data: chartData.values,
+            borderColor: "#61a5ff",
+            backgroundColor: "rgba(97, 165, 255, 0.22)",
+            fill: true,
+            tension: 0.32,
+            pointBackgroundColor: "#4fd1c5",
+            pointRadius: 4
+          }]
+        },
+        options: commonOptions
+      });
+
+      appState.charts.pie = new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: appState.selectedMetric || "Valor",
+            data: chartData.values,
+            backgroundColor: [
+              "#4fd1c5",
+              "#61a5ff",
+              "#ffb86b",
+              "#5dd39e",
+              "#ff6b81",
+              "#82aaff",
+              "#7ae7c7",
+              "#ffd280"
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: "#edf4ff" }
+            }
+          }
+        }
+      });
+    }
+
+    function buildChartData() {
+      const metricColumn = appState.selectedMetric;
+      const categoryColumn = appState.selectedCategory;
+      const fallback = {
+        labels: ["Sin datos"],
+        values: [0]
+      };
+
+      if (!metricColumn || !categoryColumn || !appState.filteredData.length) {
+        return fallback;
+      }
+
+      const grouped = {};
+
+      appState.filteredData.forEach((row, index) => {
+        const label = String(row[categoryColumn] || `Fila ${index + 1}`);
+        const value = parsePotentialNumber(row[metricColumn]);
+        if (value === null) {
+          return;
+        }
+        grouped[label] = (grouped[label] || 0) + value;
+      });
+
+      const sortedEntries = Object.entries(grouped)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, appState.settings.maxChartItems);
+
+      if (!sortedEntries.length) {
+        return fallback;
+      }
+
+      return {
+        labels: sortedEntries.map(([label]) => label),
+        values: sortedEntries.map(([, value]) => Number(value.toFixed(2)))
+      };
+    }
+
+    function destroyCharts() {
+      Object.values(appState.charts).forEach((chartInstance) => {
+        if (chartInstance) {
+          chartInstance.destroy();
+        }
+      });
+    }
+
+    function renderTable() {
+      if (!appState.columns.length || !appState.filteredData.length) {
+        refs.tableContainer.innerHTML = `<div class="empty-state">No hay datos para mostrar. Carga un CSV, un archivo de Excel o prueba con el dataset de ejemplo.</div>`;
+        return;
+      }
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+      const headRow = document.createElement("tr");
+
+      appState.columns.forEach((column) => {
+        const th = document.createElement("th");
+        th.textContent = column;
+        headRow.appendChild(th);
+      });
+
+      thead.appendChild(headRow);
+
+      appState.filteredData.forEach((row) => {
+        const tr = document.createElement("tr");
+        appState.columns.forEach((column) => {
+          const td = document.createElement("td");
+          td.textContent = row[column];
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      refs.tableContainer.innerHTML = "";
+      refs.tableContainer.appendChild(table);
+    }
+
+    function parsePotentialNumber(value) {
+      if (value === null || value === undefined || value === "") {
+        return null;
+      }
+
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value;
+      }
+
+      const raw = String(value).trim().replace(/\s/g, "");
+      let normalized = raw;
+
+      // Soporta formatos comunes: 1234.56, 1,234.56 y 1.234,56.
+      if (raw.includes(",") && raw.includes(".")) {
+        normalized = raw.lastIndexOf(",") > raw.lastIndexOf(".")
+          ? raw.replace(/\./g, "").replace(",", ".")
+          : raw.replace(/,/g, "");
+      } else if (raw.includes(",")) {
+        normalized = raw.replace(",", ".");
+      }
+
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat(appState.settings.numberLocale, {
+        maximumFractionDigits: 2
+      }).format(value || 0);
+    }
+
+    function exportFilteredDataToCsv() {
+      if (!appState.filteredData.length) {
+        showMessage("No hay datos filtrados para exportar.", "error");
+        return;
+      }
+
+      const csvLines = [];
+      csvLines.push(appState.columns.map(escapeCsvValue).join(","));
+
+      appState.filteredData.forEach((row) => {
+        csvLines.push(appState.columns.map((column) => escapeCsvValue(row[column])).join(","));
+      });
+
+      const blob = new Blob([csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "datos-filtrados.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+
+      showMessage(`Exportación completada con ${appState.filteredData.length} filas.`, "success");
+    }
+
+    function escapeCsvValue(value) {
+      const safeValue = String(value ?? "");
+      if (safeValue.includes(",") || safeValue.includes('"') || safeValue.includes("\n")) {
+        return `"${safeValue.replace(/"/g, '""')}"`;
+      }
+      return safeValue;
+    }
+
+    function clearAllData() {
+      appState.rawData = [];
+      appState.filteredData = [];
+      appState.columns = [];
+      appState.numericColumns = [];
+      appState.filters = {};
+      appState.selectedMetric = "";
+      appState.selectedCategory = "";
+      destroyCharts();
+      refs.metricColumnSelect.innerHTML = "";
+      refs.categoryColumnSelect.innerHTML = "";
+      refs.filtersContainer.innerHTML = "";
+      localStorage.removeItem(STORAGE_KEY);
+      renderEmptyApp();
+      showMessage("Los datos fueron eliminados del dashboard y de la persistencia local.", "success");
+    }
+
+    function renderEmptyApp() {
+      refs.datasetStatus.textContent = "Sin dataset cargado";
+      refs.rowsStatus.textContent = "0 filas visibles";
+      refs.tableColumnsStatus.textContent = "0 columnas detectadas";
+      refs.kpiTotal.textContent = "0";
+      refs.kpiAvg.textContent = "0";
+      refs.kpiMax.textContent = "0";
+      refs.kpiMin.textContent = "0";
+      refs.kpiTotalText.textContent = "Carga un CSV, un archivo de Excel o usa el dataset de ejemplo";
+      refs.filtersContainer.innerHTML = `<div class="empty-state" style="width: 100%;">Los filtros aparecerán aquí automáticamente.</div>`;
+      refs.tableContainer.innerHTML = `<div class="empty-state">No hay datos para mostrar. Carga un CSV, un archivo de Excel o prueba con el dataset de ejemplo.</div>`;
+      populateSelectors();
+      renderCharts();
+    }
+
+    function persistState() {
+      if (!appState.settings.autoPersist) {
+        return;
+      }
+
+      const serializableState = {
+        rawData: appState.rawData,
+        filters: appState.filters,
+        selectedMetric: appState.selectedMetric,
+        selectedCategory: appState.selectedCategory,
+        settings: appState.settings
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableState));
+    }
+
+    function restoreState() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+          return;
+        }
+
+        const savedState = JSON.parse(stored);
+        appState.settings = {
+          ...appState.settings,
+          ...(savedState.settings || {})
+        };
+
+        refs.maxChartItems.value = appState.settings.maxChartItems;
+        refs.numberFormatSelect.value = appState.settings.numberLocale;
+        refs.autoPersistToggle.value = String(appState.settings.autoPersist);
+
+        if (!savedState.rawData || !savedState.rawData.length) {
+          return;
+        }
+
+        appState.rawData = savedState.rawData;
+        appState.columns = Object.keys(savedState.rawData[0] || {});
+        appState.numericColumns = detectNumericColumns(appState.rawData, appState.columns);
+        appState.filters = { ...createInitialFilters(appState.columns), ...(savedState.filters || {}) };
+        appState.selectedMetric = savedState.selectedMetric || getDefaultMetricColumn();
+        appState.selectedCategory = savedState.selectedCategory || getDefaultCategoryColumn();
+
+        applyFilters();
+        populateSelectors();
+        renderFilters();
+        renderTable();
+        updateDashboard();
+        refs.datasetStatus.textContent = "Dataset restaurado desde localStorage";
+        showMessage("Se restauró automáticamente la última sesión guardada.", "success");
+      } catch (error) {
+        console.error("No se pudo restaurar el estado:", error);
+        showMessage("Se detectó un error al restaurar la sesión previa. Puedes cargar un nuevo archivo.", "error");
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
